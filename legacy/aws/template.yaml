@@ -1,0 +1,176 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Serverless backend for AWS Expense Desk.
+
+Parameters:
+  AppOrigin:
+    Type: String
+    Default: http://localhost:3000
+    Description: Origin allowed to call the HTTP API and S3 upload URLs.
+
+Globals:
+  Function:
+    Runtime: dotnet8
+    Timeout: 10
+    MemorySize: 256
+    Architectures:
+      - arm64
+
+Resources:
+  ExpenseUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: aws-expense-desk-users
+      AutoVerifiedAttributes:
+        - email
+      UsernameAttributes:
+        - email
+      Schema:
+        - Name: email
+          Required: true
+          Mutable: true
+
+  ExpenseUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: aws-expense-desk-web
+      UserPoolId: !Ref ExpenseUserPool
+      GenerateSecret: false
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthFlows:
+        - code
+      AllowedOAuthScopes:
+        - openid
+        - email
+        - profile
+      CallbackURLs:
+        - !Sub "${AppOrigin}/api/auth/callback"
+      LogoutURLs:
+        - !Ref AppOrigin
+      SupportedIdentityProviders:
+        - COGNITO
+
+  EmployeeGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: EMPLOYEE
+      UserPoolId: !Ref ExpenseUserPool
+
+  AdminGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: ADMIN
+      UserPoolId: !Ref ExpenseUserPool
+
+  ReceiptsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders:
+              - "*"
+            AllowedMethods:
+              - GET
+              - PUT
+            AllowedOrigins:
+              - !Ref AppOrigin
+            MaxAge: 300
+
+  ExpenseTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: aws-expense-desk-requests
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: requestId
+          AttributeType: S
+        - AttributeName: employeeId
+          AttributeType: S
+        - AttributeName: status
+          AttributeType: S
+        - AttributeName: createdAt
+          AttributeType: S
+      KeySchema:
+        - AttributeName: requestId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: employeeId-createdAt-index
+          KeySchema:
+            - AttributeName: employeeId
+              KeyType: HASH
+            - AttributeName: createdAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: status-createdAt-index
+          KeySchema:
+            - AttributeName: status
+              KeyType: HASH
+            - AttributeName: createdAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+
+  ExpenseHttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowOrigins:
+          - !Ref AppOrigin
+        AllowHeaders:
+          - content-type
+          - authorization
+        AllowMethods:
+          - GET
+          - POST
+          - PATCH
+          - OPTIONS
+      Auth:
+        DefaultAuthorizer: CognitoAuthorizer
+        Authorizers:
+          CognitoAuthorizer:
+            IdentitySource: "$request.header.Authorization"
+            JwtConfiguration:
+              issuer: !Sub "https://cognito-idp.${AWS::Region}.amazonaws.com/${ExpenseUserPool}"
+              audience:
+                - !Ref ExpenseUserPoolClient
+
+  ExpenseApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/expense-api/
+      Handler: ExpenseApi::ExpenseApi.Function::FunctionHandler
+      Environment:
+        Variables:
+          APP_ORIGIN: !Ref AppOrigin
+          EXPENSE_TABLE_NAME: !Ref ExpenseTable
+          RECEIPTS_BUCKET_NAME: !Ref ReceiptsBucket
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ExpenseTable
+        - S3CrudPolicy:
+            BucketName: !Ref ReceiptsBucket
+      Events:
+        ApiProxy:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref ExpenseHttpApi
+            Path: /{proxy+}
+            Method: ANY
+
+Outputs:
+  ExpenseApiUrl:
+    Value: !Sub "https://${ExpenseHttpApi}.execute-api.${AWS::Region}.amazonaws.com"
+  CognitoUserPoolId:
+    Value: !Ref ExpenseUserPool
+  CognitoClientId:
+    Value: !Ref ExpenseUserPoolClient
+  ReceiptsBucketName:
+    Value: !Ref ReceiptsBucket
+  ExpenseTableName:
+    Value: !Ref ExpenseTable
