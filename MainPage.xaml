@@ -1,36 +1,405 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="NotesDeFrais.MainPage">
+             x:Class="NotesDeFrais.MainPage"
+             x:Name="Root"
+             BackgroundColor="#F7F8FA"
+             Title="Notes de frais">
 
     <ScrollView>
-        <VerticalStackLayout
-            Padding="30,0"
-            Spacing="25">
-            <Image
-                Source="dotnet_bot.png"
-                HeightRequest="185"
-                Aspect="AspectFit"
-                SemanticProperties.Description="dot net bot in a submarine number ten" />
+        <VerticalStackLayout Padding="20,24" Spacing="16">
+            <Grid ColumnDefinitions="*,Auto"
+                  ColumnSpacing="12">
+                <VerticalStackLayout Spacing="2">
+                    <Label Text="Notes de frais"
+                           FontSize="30"
+                           FontAttributes="Bold"
+                           TextColor="#172033" />
+                    <Label Text="Remboursements, justificatifs et validations"
+                           FontSize="14"
+                           TextColor="#637083" />
+                </VerticalStackLayout>
 
-            <Label
-                Text="Hello, World!"
-                Style="{StaticResource Headline}"
-                SemanticProperties.HeadingLevel="Level1" />
+                <ActivityIndicator x:Name="BusyIndicator"
+                                   Grid.Column="1"
+                                   IsRunning="False"
+                                   IsVisible="False"
+                                   Color="#1D6F5F"
+                                   VerticalOptions="Center" />
+            </Grid>
 
-            <Label
-                Text="Welcome to &#10;.NET Multi-platform App UI"
-                Style="{StaticResource SubHeadline}"
-                SemanticProperties.HeadingLevel="Level2"
-                SemanticProperties.Description="Welcome to dot net Multi platform App U I" />
+            <Border Stroke="#D8DEE8"
+                    StrokeThickness="1"
+                    BackgroundColor="#FFFFFF"
+                    Padding="16">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="8" />
+                </Border.StrokeShape>
 
-            <Button
-                x:Name="CounterBtn"
-                Text="Click me" 
-                SemanticProperties.Hint="Counts the number of times you click"
-                Clicked="OnCounterClicked"
-                HorizontalOptions="Fill" />
+                <VerticalStackLayout Spacing="12">
+                    <Grid ColumnDefinitions="*,Auto"
+                          ColumnSpacing="12">
+                        <VerticalStackLayout Spacing="2">
+                            <Label x:Name="SessionTitleLabel"
+                                   Text="Configuration et connexion"
+                                   FontSize="18"
+                                   FontAttributes="Bold"
+                                   TextColor="#172033" />
+                            <Label x:Name="SessionSubtitleLabel"
+                                   Text="Renseigne la sortie SAM puis connecte-toi avec Cognito."
+                                   FontSize="13"
+                                   TextColor="#637083" />
+                        </VerticalStackLayout>
+
+                        <Button x:Name="LogoutButton"
+                                Grid.Column="1"
+                                Text="Deconnexion"
+                                IsVisible="False"
+                                Clicked="OnLogoutClicked" />
+                    </Grid>
+
+                    <Grid ColumnDefinitions="*,*"
+                          RowDefinitions="Auto,Auto,Auto"
+                          ColumnSpacing="12"
+                          RowSpacing="10">
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="API Gateway"
+                                   FontSize="12"
+                                   TextColor="#637083" />
+                            <Entry x:Name="ApiUrlEntry"
+                                   Placeholder="https://abc.execute-api.eu-west-1.amazonaws.com"
+                                   Keyboard="Url" />
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Grid.Column="1"
+                                             Spacing="4">
+                            <Label Text="Domaine Cognito"
+                                   FontSize="12"
+                                   TextColor="#637083" />
+                            <Entry x:Name="CognitoDomainEntry"
+                                   Placeholder="https://prefix.auth.eu-west-1.amazoncognito.com"
+                                   Keyboard="Url" />
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Grid.Row="1"
+                                             Spacing="4">
+                            <Label Text="Client id Cognito"
+                                   FontSize="12"
+                                   TextColor="#637083" />
+                            <Entry x:Name="ClientIdEntry"
+                                   Placeholder="client id public" />
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Grid.Row="1"
+                                             Grid.Column="1"
+                                             Spacing="4">
+                            <Label Text="URI de retour"
+                                   FontSize="12"
+                                   TextColor="#637083" />
+                            <Entry x:Name="RedirectUriEntry"
+                                   Placeholder="notesdefrais://auth" />
+                        </VerticalStackLayout>
+
+                        <FlexLayout Grid.Row="2"
+                                    Grid.ColumnSpan="2"
+                                    Direction="Row"
+                                    Wrap="Wrap"
+                                    AlignItems="Center">
+                            <Button Text="Enregistrer"
+                                    Margin="0,0,10,10"
+                                    Clicked="OnSaveConfigurationClicked" />
+                            <Button x:Name="LoginButton"
+                                    Text="Connexion Cognito"
+                                    Margin="0,0,10,10"
+                                    BackgroundColor="#1D6F5F"
+                                    TextColor="#FFFFFF"
+                                    Clicked="OnLoginClicked" />
+                            <Button x:Name="RefreshButton"
+                                    Text="Actualiser"
+                                    Margin="0,0,10,10"
+                                    IsVisible="False"
+                                    Clicked="OnRefreshClicked" />
+                        </FlexLayout>
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+            <Border x:Name="CreateExpenseSection"
+                    Stroke="#D8DEE8"
+                    StrokeThickness="1"
+                    BackgroundColor="#FFFFFF"
+                    Padding="16"
+                    IsVisible="False">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="8" />
+                </Border.StrokeShape>
+
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Nouvelle demande"
+                           FontSize="20"
+                           FontAttributes="Bold"
+                           TextColor="#172033" />
+
+                    <Grid ColumnDefinitions="160,*"
+                          RowDefinitions="Auto,Auto,Auto"
+                          ColumnSpacing="12"
+                          RowSpacing="10">
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Montant"
+                                   FontSize="12"
+                                   TextColor="#637083" />
+                            <Entry x:Name="AmountEntry"
+                                   Placeholder="42,50"
+                                   Keyboard="Numeric" />
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Grid.Column="1"
+                                             Spacing="4">
+                            <Label Text="Categorie"
+                                   FontSize="12"
+                                   TextColor="#637083" />
+                            <Picker x:Name="CategoryPicker"
+                                    Title="Choisir">
+                                <Picker.ItemsSource>
+                                    <x:Array Type="{x:Type x:String}">
+                                        <x:String>Transport</x:String>
+                                        <x:String>Repas</x:String>
+                                        <x:String>Hebergement</x:String>
+                                        <x:String>Materiel</x:String>
+                                        <x:String>Autre</x:String>
+                                    </x:Array>
+                                </Picker.ItemsSource>
+                            </Picker>
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Grid.Row="1"
+                                             Grid.ColumnSpan="2"
+                                             Spacing="4">
+                            <Label Text="Description"
+                                   FontSize="12"
+                                   TextColor="#637083" />
+                            <Editor x:Name="DescriptionEditor"
+                                    Placeholder="Contexte de la depense"
+                                    AutoSize="TextChanges"
+                                    MinimumHeightRequest="88" />
+                        </VerticalStackLayout>
+
+                        <Grid Grid.Row="2"
+                              Grid.ColumnSpan="2"
+                              ColumnDefinitions="Auto,*"
+                              ColumnSpacing="12">
+                            <Button Text="Choisir un justificatif"
+                                    Clicked="OnPickReceiptClicked" />
+
+                            <VerticalStackLayout Grid.Column="1"
+                                                 Spacing="6"
+                                                 VerticalOptions="Center">
+                                <Label x:Name="SelectedReceiptLabel"
+                                       Text="Aucun fichier selectionne"
+                                       TextColor="#637083"
+                                       LineBreakMode="TailTruncation" />
+                                <Image x:Name="ReceiptPreviewImage"
+                                       HeightRequest="140"
+                                       Aspect="AspectFit"
+                                       BackgroundColor="#EEF1F5"
+                                       IsVisible="False" />
+                            </VerticalStackLayout>
+                        </Grid>
+                    </Grid>
+
+                    <Button Text="Envoyer la demande"
+                            BackgroundColor="#1D6F5F"
+                            TextColor="#FFFFFF"
+                            Clicked="OnCreateExpenseClicked" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border x:Name="MyExpensesSection"
+                    Stroke="#D8DEE8"
+                    StrokeThickness="1"
+                    BackgroundColor="#FFFFFF"
+                    Padding="16"
+                    IsVisible="False">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="8" />
+                </Border.StrokeShape>
+
+                <VerticalStackLayout Spacing="12">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Text="Mes demandes"
+                               FontSize="20"
+                               FontAttributes="Bold"
+                               TextColor="#172033" />
+                        <Button Grid.Column="1"
+                                Text="Recharger"
+                                Clicked="OnRefreshMineClicked" />
+                    </Grid>
+
+                    <Label x:Name="MyExpensesEmptyLabel"
+                           Text="Aucune demande pour le moment."
+                           TextColor="#637083" />
+
+                    <VerticalStackLayout Spacing="10"
+                                         BindableLayout.ItemsSource="{Binding MyExpenses, Source={x:Reference Root}}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate>
+                                <Border Stroke="#E3E7EE"
+                                        StrokeThickness="1"
+                                        BackgroundColor="#FBFCFE"
+                                        Padding="12">
+                                    <Border.StrokeShape>
+                                        <RoundRectangle CornerRadius="8" />
+                                    </Border.StrokeShape>
+
+                                    <VerticalStackLayout Spacing="8">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <Label Text="{Binding DisplayAmount}"
+                                                   FontSize="18"
+                                                   FontAttributes="Bold"
+                                                   TextColor="#172033" />
+                                            <Label Grid.Column="1"
+                                                   Text="{Binding DisplayStatus}"
+                                                   TextColor="#1D6F5F"
+                                                   FontAttributes="Bold" />
+                                        </Grid>
+
+                                        <Label Text="{Binding Category}"
+                                               TextColor="#425066"
+                                               FontAttributes="Bold" />
+                                        <Label Text="{Binding Description}"
+                                               TextColor="#425066" />
+                                        <Label Text="{Binding DisplayCreatedAt}"
+                                               FontSize="12"
+                                               TextColor="#637083" />
+                                        <Label Text="{Binding AdminComment, StringFormat='Commentaire admin : {0}'}"
+                                               FontSize="12"
+                                               TextColor="#8A3D2B"
+                                               IsVisible="{Binding HasAdminComment}" />
+
+                                        <Button Text="Voir le justificatif"
+                                                IsVisible="{Binding HasReceipt}"
+                                                CommandParameter="{Binding ReceiptUrl}"
+                                                Clicked="OnOpenReceiptClicked" />
+                                    </VerticalStackLayout>
+                                </Border>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <Border x:Name="AdminSection"
+                    Stroke="#D8DEE8"
+                    StrokeThickness="1"
+                    BackgroundColor="#FFFFFF"
+                    Padding="16"
+                    IsVisible="False">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="8" />
+                </Border.StrokeShape>
+
+                <VerticalStackLayout Spacing="12">
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="Validation admin"
+                               FontSize="20"
+                               FontAttributes="Bold"
+                               TextColor="#172033" />
+
+                        <FlexLayout Direction="Row"
+                                    Wrap="Wrap"
+                                    AlignItems="Center">
+                            <Picker x:Name="AdminStatusPicker"
+                                    WidthRequest="170"
+                                    Margin="0,0,10,10"
+                                    SelectedIndexChanged="OnAdminStatusChanged">
+                                <Picker.ItemsSource>
+                                    <x:Array Type="{x:Type x:String}">
+                                        <x:String>PENDING</x:String>
+                                        <x:String>APPROVED</x:String>
+                                        <x:String>REJECTED</x:String>
+                                    </x:Array>
+                                </Picker.ItemsSource>
+                            </Picker>
+                            <Button Text="Recharger"
+                                    Margin="0,0,10,10"
+                                    Clicked="OnRefreshAdminClicked" />
+                        </FlexLayout>
+                    </VerticalStackLayout>
+
+                    <Label x:Name="AdminExpensesEmptyLabel"
+                           Text="Aucune demande dans ce statut."
+                           TextColor="#637083" />
+
+                    <VerticalStackLayout Spacing="10"
+                                         BindableLayout.ItemsSource="{Binding AdminExpenses, Source={x:Reference Root}}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate>
+                                <Border Stroke="#E3E7EE"
+                                        StrokeThickness="1"
+                                        BackgroundColor="#FBFCFE"
+                                        Padding="12">
+                                    <Border.StrokeShape>
+                                        <RoundRectangle CornerRadius="8" />
+                                    </Border.StrokeShape>
+
+                                    <VerticalStackLayout Spacing="8">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <VerticalStackLayout Spacing="2">
+                                                <Label Text="{Binding EmployeeName}"
+                                                       FontAttributes="Bold"
+                                                       TextColor="#172033" />
+                                                <Label Text="{Binding EmployeeEmail}"
+                                                       FontSize="12"
+                                                       TextColor="#637083" />
+                                            </VerticalStackLayout>
+                                            <Label Grid.Column="1"
+                                                   Text="{Binding DisplayAmount}"
+                                                   FontSize="18"
+                                                   FontAttributes="Bold"
+                                                   TextColor="#172033" />
+                                        </Grid>
+
+                                        <Label Text="{Binding Category}"
+                                               TextColor="#425066"
+                                               FontAttributes="Bold" />
+                                        <Label Text="{Binding Description}"
+                                               TextColor="#425066" />
+                                        <Label Text="{Binding DisplayCreatedAt}"
+                                               FontSize="12"
+                                               TextColor="#637083" />
+                                        <Label Text="{Binding AdminComment, StringFormat='Commentaire admin : {0}'}"
+                                               FontSize="12"
+                                               TextColor="#8A3D2B"
+                                               IsVisible="{Binding HasAdminComment}" />
+
+                                        <FlexLayout Direction="Row"
+                                                    Wrap="Wrap"
+                                                    AlignItems="Center">
+                                            <Button Text="Justificatif"
+                                                    IsVisible="{Binding HasReceipt}"
+                                                    Margin="0,0,10,10"
+                                                    CommandParameter="{Binding ReceiptUrl}"
+                                                    Clicked="OnOpenReceiptClicked" />
+                                            <Button Text="Accepter"
+                                                    BackgroundColor="#1D6F5F"
+                                                    TextColor="#FFFFFF"
+                                                    Margin="0,0,10,10"
+                                                    CommandParameter="{Binding RequestId}"
+                                                    Clicked="OnApproveExpenseClicked" />
+                                            <Button Text="Refuser"
+                                                    BackgroundColor="#9B3B3B"
+                                                    TextColor="#FFFFFF"
+                                                    Margin="0,0,10,10"
+                                                    CommandParameter="{Binding RequestId}"
+                                                    Clicked="OnRejectExpenseClicked" />
+                                        </FlexLayout>
+                                    </VerticalStackLayout>
+                                </Border>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
         </VerticalStackLayout>
     </ScrollView>
-
 </ContentPage>

@@ -7,7 +7,7 @@
     Title="NotesDeFrais">
 
     <ShellContent
-        Title="Home"
+        Title="Notes de frais"
         ContentTemplate="{DataTemplate local:MainPage}"
         Route="MainPage" />
 
