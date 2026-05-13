@@ -1,11 +1,11 @@
 version = 0.1
 [default.deploy.parameters]
-stack_name = "expense-api"
+stack_name = "expense-app-stack"
 resolve_s3 = true
-s3_prefix = "expense-api"
+s3_prefix = "expense-app-bucket"
 region = "eu-west-3"
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM"
-parameter_overrides = "AppOrigin=\"http://localhost:3000\""
+parameter_overrides = "AppOrigin=\"http://localhost:3000\" NativeCallbackUrl=\"notesdefrais://auth\" NativeLogoutUrl=\"notesdefrais://signout\" CognitoDomainPrefix=\"notesdefrais-viggo-lewis\""
 image_repositories = []
 disable_rollback = true

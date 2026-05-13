@@ -7,6 +7,29 @@ Parameters:
     Type: String
     Default: http://localhost:3000
     Description: Origin allowed to call the HTTP API and S3 upload URLs.
+  NativeCallbackUrl:
+    Type: String
+    Default: notesdefrais://auth
+    Description: Callback URI used by the MAUI application after Cognito sign-in.
+  NativeLogoutUrl:
+    Type: String
+    Default: notesdefrais://signout
+    Description: Logout URI used by the MAUI application.
+  CognitoDomainPrefix:
+    Type: String
+    Default: ""
+    Description: Optional globally unique prefix for the Cognito hosted UI domain. Defaults to stack name plus account id.
+  EnableCognitoHostedUiDomain:
+    Type: String
+    Default: "true"
+    AllowedValues:
+      - "true"
+      - "false"
+    Description: Set to false temporarily when replacing the Cognito hosted UI domain prefix.
+
+Conditions:
+  HasCognitoDomainPrefix: !Not [!Equals [!Ref CognitoDomainPrefix, ""]]
+  EnableCognitoHostedUiDomainCondition: !Equals [!Ref EnableCognitoHostedUiDomain, "true"]
 
 Globals:
   Function:
@@ -45,10 +68,22 @@ Resources:
         - profile
       CallbackURLs:
         - !Sub "${AppOrigin}/api/auth/callback"
+        - !Ref NativeCallbackUrl
       LogoutURLs:
         - !Ref AppOrigin
+        - !Ref NativeLogoutUrl
       SupportedIdentityProviders:
         - COGNITO
+
+  ExpenseUserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Condition: EnableCognitoHostedUiDomainCondition
+    Properties:
+      Domain: !If
+        - HasCognitoDomainPrefix
+        - !Ref CognitoDomainPrefix
+        - !Sub "${AWS::StackName}-${AWS::AccountId}"
+      UserPoolId: !Ref ExpenseUserPool
 
   EmployeeGroup:
     Type: AWS::Cognito::UserPoolGroup
@@ -170,6 +205,12 @@ Outputs:
     Value: !Ref ExpenseUserPool
   CognitoClientId:
     Value: !Ref ExpenseUserPoolClient
+  CognitoHostedUiDomain:
+    Condition: EnableCognitoHostedUiDomainCondition
+    Value: !If
+      - HasCognitoDomainPrefix
+      - !Sub "https://${CognitoDomainPrefix}.auth.${AWS::Region}.amazoncognito.com"
+      - !Sub "https://${AWS::StackName}-${AWS::AccountId}.auth.${AWS::Region}.amazoncognito.com"
   ReceiptsBucketName:
     Value: !Ref ReceiptsBucket
   ExpenseTableName:
