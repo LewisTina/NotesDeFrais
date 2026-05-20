@@ -12,6 +12,7 @@ public sealed class CognitoAuthService
     private const string IdTokenKey = "auth_id_token";
     private const string AccessTokenKey = "auth_access_token";
     private const string RefreshTokenKey = "auth_refresh_token";
+    private const string FallbackPrefix = "fallback_";
 
     private readonly HttpClient httpClient = new();
     private readonly ExpenseAppConfiguration configuration;
@@ -72,7 +73,7 @@ public sealed class CognitoAuthService
 
     public async Task<string?> GetValidIdTokenAsync()
     {
-        var idToken = await SecureStorage.Default.GetAsync(IdTokenKey);
+        var idToken = await GetTokenAsync(IdTokenKey);
         if (string.IsNullOrWhiteSpace(idToken))
         {
             return null;
@@ -83,7 +84,7 @@ public sealed class CognitoAuthService
             return idToken;
         }
 
-        var refreshToken = await SecureStorage.Default.GetAsync(RefreshTokenKey);
+        var refreshToken = await GetTokenAsync(RefreshTokenKey);
         if (string.IsNullOrWhiteSpace(refreshToken))
         {
             await SignOutAsync(openHostedLogout: false);
@@ -103,9 +104,9 @@ public sealed class CognitoAuthService
 
     public async Task SignOutAsync(bool openHostedLogout = true)
     {
-        SecureStorage.Default.Remove(IdTokenKey);
-        SecureStorage.Default.Remove(AccessTokenKey);
-        SecureStorage.Default.Remove(RefreshTokenKey);
+        RemoveToken(IdTokenKey);
+        RemoveToken(AccessTokenKey);
+        RemoveToken(RefreshTokenKey);
 
         if (!openHostedLogout || string.IsNullOrWhiteSpace(configuration.CognitoDomain))
         {
@@ -158,8 +159,8 @@ public sealed class CognitoAuthService
 
     private async Task SaveTokensAsync(CognitoTokenResponse tokenResponse, string? existingRefreshToken = null)
     {
-        await SecureStorage.Default.SetAsync(IdTokenKey, tokenResponse.IdToken);
-        await SecureStorage.Default.SetAsync(AccessTokenKey, tokenResponse.AccessToken);
+        await SetTokenAsync(IdTokenKey, tokenResponse.IdToken);
+        await SetTokenAsync(AccessTokenKey, tokenResponse.AccessToken);
 
         var refreshToken = string.IsNullOrWhiteSpace(tokenResponse.RefreshToken)
             ? existingRefreshToken
@@ -167,8 +168,47 @@ public sealed class CognitoAuthService
 
         if (!string.IsNullOrWhiteSpace(refreshToken))
         {
-            await SecureStorage.Default.SetAsync(RefreshTokenKey, refreshToken);
+            await SetTokenAsync(RefreshTokenKey, refreshToken);
         }
+    }
+
+    private static async Task<string?> GetTokenAsync(string key)
+    {
+        try
+        {
+            return await SecureStorage.Default.GetAsync(key) ?? Preferences.Get($"{FallbackPrefix}{key}", null);
+        }
+        catch
+        {
+            return Preferences.Get($"{FallbackPrefix}{key}", null);
+        }
+    }
+
+    private static async Task SetTokenAsync(string key, string value)
+    {
+        try
+        {
+            await SecureStorage.Default.SetAsync(key, value);
+            Preferences.Remove($"{FallbackPrefix}{key}");
+        }
+        catch
+        {
+            Preferences.Set($"{FallbackPrefix}{key}", value);
+        }
+    }
+
+    private static void RemoveToken(string key)
+    {
+        try
+        {
+            SecureStorage.Default.Remove(key);
+        }
+        catch
+        {
+            // SecureStorage can be unavailable on unsigned local MacCatalyst builds.
+        }
+
+        Preferences.Remove($"{FallbackPrefix}{key}");
     }
 
     private void EnsureConfigured()
