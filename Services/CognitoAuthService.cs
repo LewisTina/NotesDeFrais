@@ -42,13 +42,10 @@ public sealed class CognitoAuthService
             CallbackUrl = new Uri(configuration.RedirectUri),
             PrefersEphemeralWebBrowserSession = true
         });
-        Console.WriteLine($"Expected state: {state}");
 
         if (!result.Properties.TryGetValue("state", out var returnedState)
             || !string.Equals(returnedState, state, StringComparison.Ordinal))
         {
-            Console.WriteLine($"Expected state: {state}");
-            Console.WriteLine($"Returned state: {returnedState}");
             throw new InvalidOperationException("La reponse Cognito ne correspond pas a la session de connexion.");
         }
 
