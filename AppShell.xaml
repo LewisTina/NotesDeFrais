@@ -16,18 +16,22 @@
     <TabBar>
         <ShellContent
             Title="Session"
+            Icon="icon_session.svg"
             ContentTemplate="{DataTemplate pages:SessionPage}"
             Route="SessionPage" />
         <ShellContent
             Title="Nouvelle"
+            Icon="icon_new_expense.svg"
             ContentTemplate="{DataTemplate pages:NewExpensePage}"
             Route="NewExpensePage" />
         <ShellContent
             Title="Mes demandes"
+            Icon="icon_expenses.svg"
             ContentTemplate="{DataTemplate pages:MyExpensesPage}"
             Route="MyExpensesPage" />
         <ShellContent
             Title="Admin"
+            Icon="icon_admin.svg"
             ContentTemplate="{DataTemplate pages:AdminExpensesPage}"
             Route="AdminExpensesPage" />
     </TabBar>
