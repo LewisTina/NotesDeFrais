@@ -3,12 +3,33 @@
     x:Class="NotesDeFrais.AppShell"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    xmlns:local="clr-namespace:NotesDeFrais"
-    Title="NotesDeFrais">
+    xmlns:pages="clr-namespace:NotesDeFrais.Pages"
+    Title="NotesDeFrais"
+    Shell.BackgroundColor="{StaticResource Surface}"
+    Shell.ForegroundColor="{StaticResource Ink}"
+    Shell.TitleColor="{StaticResource Ink}"
+    Shell.TabBarBackgroundColor="#FFFFFF"
+    Shell.TabBarForegroundColor="{StaticResource Muted}"
+    Shell.TabBarTitleColor="{StaticResource Accent}"
+    Shell.TabBarUnselectedColor="{StaticResource Muted}">
 
-    <ShellContent
-        Title="Notes de frais"
-        ContentTemplate="{DataTemplate local:MainPage}"
-        Route="MainPage" />
+    <TabBar>
+        <ShellContent
+            Title="Session"
+            ContentTemplate="{DataTemplate pages:SessionPage}"
+            Route="SessionPage" />
+        <ShellContent
+            Title="Nouvelle"
+            ContentTemplate="{DataTemplate pages:NewExpensePage}"
+            Route="NewExpensePage" />
+        <ShellContent
+            Title="Mes demandes"
+            ContentTemplate="{DataTemplate pages:MyExpensesPage}"
+            Route="MyExpensesPage" />
+        <ShellContent
+            Title="Admin"
+            ContentTemplate="{DataTemplate pages:AdminExpensesPage}"
+            Route="AdminExpensesPage" />
+    </TabBar>
 
 </Shell>

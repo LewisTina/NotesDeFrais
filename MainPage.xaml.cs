@@ -29,7 +29,6 @@ public partial class MainPage : ContentPage
 
         CategoryPicker.SelectedIndex = 0;
         AdminStatusPicker.SelectedIndex = 0;
-        ApplyConfigurationToForm();
         RefreshSessionUi();
     }
 
@@ -55,31 +54,16 @@ public partial class MainPage : ContentPage
         });
     }
 
-    private async void OnSaveConfigurationClicked(object? sender, EventArgs e)
-    {
-        await RunSafelyAsync(() =>
-        {
-            configuration = new ExpenseAppConfiguration
-            {
-                ApiBaseUrl = ApiUrlEntry.Text ?? "",
-                CognitoDomain = CognitoDomainEntry.Text ?? "",
-                CognitoClientId = ClientIdEntry.Text ?? "",
-                RedirectUri = RedirectUriEntry.Text ?? "notesdefrais://auth",
-                LogoutUri = "notesdefrais://signout"
-            }.Normalized();
-
-            configuration.Save();
-            RebuildServices();
-            ApplyConfigurationToForm();
-            return DisplayAlertAsync("Configuration", "Les parametres ont ete enregistres sur cet appareil.", "OK");
-        });
-    }
-
     private async void OnLoginClicked(object? sender, EventArgs e)
     {
         await RunSafelyAsync(async () =>
         {
-            SaveConfigurationFromForm();
+            if (!configuration.IsComplete)
+            {
+                await DisplayAlertAsync("Connexion indisponible", "L'application n'est pas encore disponible. Contacte l'administrateur de l'application.", "OK");
+                return;
+            }
+
             currentUser = await authService.SignInAsync();
             RefreshSessionUi();
             await RefreshAllAsync();
@@ -304,46 +288,20 @@ public partial class MainPage : ContentPage
         AdminExpensesEmptyLabel.IsVisible = AdminExpenses.Count == 0;
     }
 
-    private void SaveConfigurationFromForm()
-    {
-        configuration = new ExpenseAppConfiguration
-        {
-            ApiBaseUrl = ApiUrlEntry.Text ?? "",
-            CognitoDomain = CognitoDomainEntry.Text ?? "",
-            CognitoClientId = ClientIdEntry.Text ?? "",
-            RedirectUri = RedirectUriEntry.Text ?? "notesdefrais://auth",
-            LogoutUri = "notesdefrais://signout"
-        }.Normalized();
-
-        configuration.Save();
-        RebuildServices();
-    }
-
-    private void RebuildServices()
-    {
-        authService = new CognitoAuthService(configuration);
-        expenseApiClient = new ExpenseApiClient(configuration, authService.GetValidIdTokenAsync);
-    }
-
-    private void ApplyConfigurationToForm()
-    {
-        ApiUrlEntry.Text = configuration.ApiBaseUrl;
-        CognitoDomainEntry.Text = configuration.CognitoDomain;
-        ClientIdEntry.Text = configuration.CognitoClientId;
-        RedirectUriEntry.Text = configuration.RedirectUri;
-    }
-
     private void RefreshSessionUi()
     {
         var isConnected = currentUser is not null;
         SessionTitleLabel.Text = isConnected
             ? $"{currentUser!.DisplayName} - {currentUser.RoleLabel}"
-            : "Configuration et connexion";
+            : "Connexion";
         SessionSubtitleLabel.Text = isConnected
             ? currentUser!.Email
-            : "Renseigne la sortie SAM puis connecte-toi avec Cognito.";
+            : configuration.IsComplete
+                ? "Connecte-toi avec Cognito pour utiliser l'application."
+                : "L'application n'est pas encore disponible. Contacte l'administrateur de l'application.";
 
         LoginButton.IsVisible = !isConnected;
+        LoginButton.IsEnabled = configuration.IsComplete;
         LogoutButton.IsVisible = isConnected;
         RefreshButton.IsVisible = isConnected;
         CreateExpenseSection.IsVisible = isConnected;

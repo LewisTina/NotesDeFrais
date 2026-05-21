@@ -2,12 +2,6 @@ namespace NotesDeFrais.Services;
 
 public sealed record ExpenseAppConfiguration
 {
-    private const string ApiUrlKey = "expense_api_url";
-    private const string CognitoDomainKey = "cognito_domain";
-    private const string CognitoClientIdKey = "cognito_client_id";
-    private const string RedirectUriKey = "cognito_redirect_uri";
-    private const string LogoutUriKey = "cognito_logout_uri";
-
     public string ApiBaseUrl { get; init; } = "";
 
     public string CognitoDomain { get; init; } = "";
@@ -31,11 +25,11 @@ public sealed record ExpenseAppConfiguration
         Console.WriteLine("Loading configuration...");
         return new ExpenseAppConfiguration
         {
-            ApiBaseUrl = GetValue("EXPENSE_API_URL", ApiUrlKey),
-            CognitoDomain = GetValue("COGNITO_DOMAIN", CognitoDomainKey),
-            CognitoClientId = GetValue("COGNITO_CLIENT_ID", CognitoClientIdKey),
-            RedirectUri = GetValue("COGNITO_REDIRECT_URI", RedirectUriKey, "notesdefrais://auth"),
-            LogoutUri = GetValue("COGNITO_LOGOUT_URI", LogoutUriKey, "notesdefrais://signout")
+            ApiBaseUrl = GetValue("EXPENSE_API_URL"),
+            CognitoDomain = GetValue("COGNITO_DOMAIN"),
+            CognitoClientId = GetValue("COGNITO_CLIENT_ID"),
+            RedirectUri = GetValue("COGNITO_REDIRECT_URI", "notesdefrais://auth"),
+            LogoutUri = GetValue("COGNITO_LOGOUT_URI", "notesdefrais://signout")
         }.Normalized();
     }
 
@@ -51,17 +45,7 @@ public sealed record ExpenseAppConfiguration
         };
     }
 
-    public void Save()
-    {
-        var normalized = Normalized();
-        Preferences.Set(ApiUrlKey, normalized.ApiBaseUrl);
-        Preferences.Set(CognitoDomainKey, normalized.CognitoDomain);
-        Preferences.Set(CognitoClientIdKey, normalized.CognitoClientId);
-        Preferences.Set(RedirectUriKey, normalized.RedirectUri);
-        Preferences.Set(LogoutUriKey, normalized.LogoutUri);
-    }
-
-    private static string GetValue(string environmentName, string preferenceName, string fallback = "")
+    private static string GetValue(string environmentName, string fallback = "")
     {
         var environmentValue = Environment.GetEnvironmentVariable(environmentName);
         if (!string.IsNullOrWhiteSpace(environmentValue))
@@ -69,7 +53,7 @@ public sealed record ExpenseAppConfiguration
             return environmentValue;
         }
 
-        return Preferences.Get(preferenceName, fallback);
+        return fallback;
     }
 
     private static string NormalizeDomain(string value)

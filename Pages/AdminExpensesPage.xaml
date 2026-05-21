@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="NotesDeFrais.Pages.AdminExpensesPage"
+             BackgroundColor="{StaticResource Surface}"
+             Title="Admin">
+    <ScrollView>
+        <VerticalStackLayout Padding="28,24" Spacing="18">
+            <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="12">
+                <VerticalStackLayout Spacing="3">
+                    <Label Text="Validation admin" Style="{StaticResource PageTitle}" />
+                    <Label Text="Controle des demandes par statut"
+                           Style="{StaticResource PageSubtitle}" />
+                </VerticalStackLayout>
+                <ActivityIndicator Grid.Column="1"
+                                   IsRunning="{Binding IsBusy}"
+                                   IsVisible="{Binding IsBusy}"
+                                   VerticalOptions="Center" />
+                <Picker x:Name="StatusPicker"
+                        Grid.Column="2"
+                        WidthRequest="160"
+                        SelectedIndexChanged="OnStatusChanged">
+                    <Picker.ItemsSource>
+                        <x:Array Type="{x:Type x:String}">
+                            <x:String>PENDING</x:String>
+                            <x:String>APPROVED</x:String>
+                            <x:String>REJECTED</x:String>
+                        </x:Array>
+                    </Picker.ItemsSource>
+                </Picker>
+                <Button Grid.Column="3" Text="Recharger" Style="{StaticResource SecondaryButton}" Clicked="OnRefreshClicked" />
+            </Grid>
+
+            <Border x:Name="AccessState" Style="{StaticResource Panel}">
+                <VerticalStackLayout Spacing="5">
+                    <Label Text="Acces administrateur requis"
+                           FontAttributes="Bold"
+                           FontSize="18"
+                           TextColor="{StaticResource Ink}" />
+                    <Label Text="Connecte-toi avec un compte present dans le groupe Cognito ADMIN."
+                           TextColor="{StaticResource Muted}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border x:Name="EmptyState" Style="{StaticResource Panel}" IsVisible="False">
+                <VerticalStackLayout Spacing="5">
+                    <Label Text="Aucune demande dans ce statut"
+                           FontAttributes="Bold"
+                           FontSize="18"
+                           TextColor="{StaticResource Ink}" />
+                    <Label Text="Change le filtre ou recharge la liste."
+                           TextColor="{StaticResource Muted}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <VerticalStackLayout x:Name="ListPanel"
+                                 Spacing="12"
+                                 BindableLayout.ItemsSource="{Binding AdminExpenses}">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate>
+                        <Border Style="{StaticResource Panel}">
+                            <VerticalStackLayout Spacing="10">
+                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                                    <VerticalStackLayout Spacing="2">
+                                        <Label Text="{Binding EmployeeName}" FontAttributes="Bold" FontSize="17" TextColor="{StaticResource Ink}" />
+                                        <Label Text="{Binding EmployeeEmail}" TextColor="{StaticResource Muted}" FontSize="12" />
+                                    </VerticalStackLayout>
+                                    <VerticalStackLayout Grid.Column="1" HorizontalOptions="End" Spacing="3">
+                                        <Label Text="{Binding DisplayAmount}" FontAttributes="Bold" FontSize="18" TextColor="{StaticResource Ink}" HorizontalTextAlignment="End" />
+                                        <Label Text="{Binding DisplayCreatedAt}" TextColor="{StaticResource Muted}" FontSize="12" HorizontalTextAlignment="End" />
+                                    </VerticalStackLayout>
+                                </Grid>
+
+                                <Label Text="{Binding Category}" FontAttributes="Bold" TextColor="{StaticResource Accent}" />
+                                <Label Text="{Binding Description}" TextColor="{StaticResource Muted}" />
+                                <Label Text="{Binding AdminComment, StringFormat='Commentaire admin : {0}'}"
+                                       TextColor="{StaticResource Danger}"
+                                       IsVisible="{Binding HasAdminComment}" />
+
+                                <FlexLayout Direction="Row" Wrap="Wrap" AlignItems="Center">
+                                    <Button Text="Justificatif"
+                                            Style="{StaticResource SecondaryButton}"
+                                            Margin="0,0,10,10"
+                                            IsVisible="{Binding HasReceipt}"
+                                            CommandParameter="{Binding ReceiptUrl}"
+                                            Clicked="OnOpenReceiptClicked" />
+                                    <Button Text="Accepter"
+                                            Style="{StaticResource SuccessButton}"
+                                            Margin="0,0,10,10"
+                                            CommandParameter="{Binding RequestId}"
+                                            Clicked="OnApproveClicked" />
+                                    <Button Text="Refuser"
+                                            Style="{StaticResource DangerButton}"
+                                            Margin="0,0,10,10"
+                                            CommandParameter="{Binding RequestId}"
+                                            Clicked="OnRejectClicked" />
+                                </FlexLayout>
+                            </VerticalStackLayout>
+                        </Border>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </VerticalStackLayout>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
