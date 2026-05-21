@@ -231,9 +231,7 @@ public sealed class Function
         claims.TryGetValue("given_name", out var givenName);
         claims.TryGetValue("cognito:groups", out var rawGroups);
 
-        var groups = (rawGroups ?? "")
-            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var groups = ParseGroups(rawGroups);
 
         return new AppUser(
             sub,
@@ -249,6 +247,48 @@ public sealed class Function
         {
             throw new ApiException("Acces refuse", HttpStatusCode.Forbidden);
         }
+    }
+
+    private static HashSet<string> ParseGroups(string? rawGroups)
+    {
+        var groups = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (string.IsNullOrWhiteSpace(rawGroups))
+        {
+            return groups;
+        }
+
+        var value = rawGroups.Trim();
+        if (value.StartsWith("[", StringComparison.Ordinal))
+        {
+            try
+            {
+                var jsonGroups = JsonSerializer.Deserialize<string[]>(value, JsonOptions);
+                if (jsonGroups is not null)
+                {
+                    foreach (var group in jsonGroups.Where(group => !string.IsNullOrWhiteSpace(group)))
+                    {
+                        groups.Add(group.Trim());
+                    }
+
+                    return groups;
+                }
+            }
+            catch (JsonException)
+            {
+                // Fall through to the tolerant comma parser below.
+            }
+        }
+
+        foreach (var group in value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var normalizedGroup = group.Trim().Trim('[', ']', '"', '\'');
+            if (!string.IsNullOrWhiteSpace(normalizedGroup))
+            {
+                groups.Add(normalizedGroup);
+            }
+        }
+
+        return groups;
     }
 
     private static T ParseBody<T>(APIGatewayHttpApiV2ProxyRequest request)

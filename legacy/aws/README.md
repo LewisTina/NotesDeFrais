@@ -35,7 +35,7 @@ Les memes valeurs peuvent aussi etre fournies via variables d'environnement lors
 - `COGNITO_REDIRECT_URI`
 - `COGNITO_LOGOUT_URI`
 
-Les utilisateurs doivent etre ajoutes au groupe Cognito `EMPLOYEE` ou `ADMIN`. L'application affiche l'espace de validation uniquement si le jeton Cognito contient le groupe `ADMIN`.
+Les utilisateurs doivent etre ajoutes au groupe Cognito `EMPLOYEE` ou `©`. L'application affiche l'espace de validation uniquement si le jeton Cognito contient le groupe `ADMIN`.
 
 ## Changer le prefixe Cognito
 

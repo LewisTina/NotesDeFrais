@@ -11,7 +11,8 @@ public partial class MainPage : ContentPage
     private CognitoAuthService authService;
     private ExpenseApiClient expenseApiClient;
     private AppUserProfile? currentUser;
-    private FileResult? selectedReceipt;
+    private string? selectedReceiptFileName;
+    private string? selectedReceiptContentType;
     private byte[]? selectedReceiptBytes;
     private bool initialized;
 
@@ -122,27 +123,63 @@ public partial class MainPage : ContentPage
 
     private async void OnPickReceiptClicked(object? sender, EventArgs e)
     {
-        await RunSafelyAsync(async () =>
+        try
         {
-            selectedReceipt = await FilePicker.Default.PickAsync(new PickOptions
-            {
-                PickerTitle = "Choisir un justificatif",
-                FileTypes = FilePickerFileType.Images
-            });
+            SetBusy(false);
+            var pickedReceipt = await FilePicker.Default.PickAsync(CreateReceiptPickOptions());
 
-            if (selectedReceipt is null)
+            if (pickedReceipt is null)
             {
                 return;
             }
 
-            await using var stream = await selectedReceipt.OpenReadAsync();
-            using var memory = new MemoryStream();
-            await stream.CopyToAsync(memory);
-            selectedReceiptBytes = memory.ToArray();
+            if (!IsSupportedReceipt(pickedReceipt))
+            {
+                await DisplayAlertAsync("Format invalide", "Choisis une image au format JPG, PNG, WEBP ou GIF.", "OK");
+                return;
+            }
 
-            SelectedReceiptLabel.Text = selectedReceipt.FileName;
-            ReceiptPreviewImage.Source = ImageSource.FromStream(() => new MemoryStream(selectedReceiptBytes));
-            ReceiptPreviewImage.IsVisible = true;
+            SetBusy(true);
+            var bytes = await ReadReceiptBytesAsync(pickedReceipt);
+            SetSelectedReceipt(pickedReceipt.FileName, GetContentType(pickedReceipt.FileName, pickedReceipt.ContentType), bytes);
+        }
+        catch (Exception error)
+        {
+            await DisplayAlertAsync("Justificatif", error.Message, "OK");
+        }
+        finally
+        {
+            SetBusy(false);
+            RefreshSessionUi();
+        }
+    }
+
+    private async void OnLoadReceiptPathClicked(object? sender, EventArgs e)
+    {
+        await RunSafelyAsync(async () =>
+        {
+            var path = (ReceiptPathEntry.Text ?? "").Trim().Trim('"');
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                await DisplayAlertAsync("Justificatif", "Renseigne le chemin complet du fichier.", "OK");
+                return;
+            }
+
+            if (!File.Exists(path))
+            {
+                await DisplayAlertAsync("Justificatif", $"Fichier introuvable : {path}", "OK");
+                return;
+            }
+
+            var fileName = Path.GetFileName(path);
+            if (!IsSupportedReceipt(fileName, null))
+            {
+                await DisplayAlertAsync("Format invalide", "Choisis une image au format JPG, PNG, WEBP ou GIF.", "OK");
+                return;
+            }
+
+            var bytes = await File.ReadAllBytesAsync(path);
+            SetSelectedReceipt(fileName, GetContentType(fileName, null), bytes);
         });
     }
 
@@ -163,7 +200,10 @@ public partial class MainPage : ContentPage
                 return;
             }
 
-            if (selectedReceipt is null || selectedReceiptBytes is null)
+            if (string.IsNullOrWhiteSpace(selectedReceiptFileName)
+                || string.IsNullOrWhiteSpace(selectedReceiptContentType)
+                || selectedReceiptBytes is null
+                || selectedReceiptBytes.Length == 0)
             {
                 await DisplayAlertAsync("Justificatif requis", "Ajoute une image du justificatif avant d'envoyer la demande.", "OK");
                 return;
@@ -177,16 +217,15 @@ public partial class MainPage : ContentPage
                 return;
             }
 
-            var contentType = GetContentType(selectedReceipt);
-            var uploadUrl = await expenseApiClient.CreateUploadUrlAsync(selectedReceipt.FileName, contentType);
-            await expenseApiClient.UploadReceiptAsync(uploadUrl, selectedReceiptBytes, contentType);
+            var uploadUrl = await expenseApiClient.CreateUploadUrlAsync(selectedReceiptFileName, selectedReceiptContentType);
+            await expenseApiClient.UploadReceiptAsync(uploadUrl, selectedReceiptBytes, selectedReceiptContentType);
             await expenseApiClient.CreateExpenseAsync(new CreateExpenseRequest(
                 amount,
                 category,
                 description,
                 uploadUrl.Key,
-                selectedReceipt.FileName,
-                contentType));
+                selectedReceiptFileName,
+                selectedReceiptContentType));
 
             ResetExpenseForm();
             await RefreshMineAsync();
@@ -318,9 +357,11 @@ public partial class MainPage : ContentPage
     {
         AmountEntry.Text = "";
         DescriptionEditor.Text = "";
-        selectedReceipt = null;
+        selectedReceiptFileName = null;
+        selectedReceiptContentType = null;
         selectedReceiptBytes = null;
         SelectedReceiptLabel.Text = "Aucun fichier selectionne";
+        ReceiptPathEntry.Text = "";
         ReceiptPreviewImage.Source = null;
         ReceiptPreviewImage.IsVisible = false;
     }
@@ -361,14 +402,26 @@ public partial class MainPage : ContentPage
         }
     }
 
-    private static string GetContentType(FileResult file)
+    private void SetSelectedReceipt(string fileName, string contentType, byte[] bytes)
     {
-        if (!string.IsNullOrWhiteSpace(file.ContentType))
+        selectedReceiptFileName = fileName;
+        selectedReceiptContentType = contentType;
+        selectedReceiptBytes = bytes;
+
+        SelectedReceiptLabel.Text = $"{fileName} ({bytes.Length / 1024m:N1} Ko)";
+        ReceiptPreviewImage.Source = ImageSource.FromStream(() => new MemoryStream(bytes));
+        ReceiptPreviewImage.IsVisible = true;
+    }
+
+    private static string GetContentType(string fileName, string? reportedContentType)
+    {
+        if (!string.IsNullOrWhiteSpace(reportedContentType)
+            && reportedContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
         {
-            return file.ContentType;
+            return reportedContentType;
         }
 
-        return Path.GetExtension(file.FileName).ToLowerInvariant() switch
+        return Path.GetExtension(fileName).ToLowerInvariant() switch
         {
             ".jpg" or ".jpeg" => "image/jpeg",
             ".png" => "image/png",
@@ -376,5 +429,53 @@ public partial class MainPage : ContentPage
             ".gif" => "image/gif",
             _ => "application/octet-stream"
         };
+    }
+
+    private static PickOptions CreateReceiptPickOptions()
+    {
+        if (DeviceInfo.Platform == DevicePlatform.MacCatalyst)
+        {
+            return new PickOptions
+            {
+                PickerTitle = "Choisir un justificatif"
+            };
+        }
+
+        return new PickOptions
+        {
+            PickerTitle = "Choisir un justificatif",
+            FileTypes = FilePickerFileType.Images
+        };
+    }
+
+    private static bool IsSupportedReceipt(FileResult file)
+    {
+        return IsSupportedReceipt(file.FileName, file.ContentType);
+    }
+
+    private static bool IsSupportedReceipt(string fileName, string? contentType)
+    {
+        if (!string.IsNullOrWhiteSpace(contentType)
+            && contentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return Path.GetExtension(fileName).ToLowerInvariant() is ".jpg" or ".jpeg" or ".png" or ".webp" or ".gif";
+    }
+
+    private static async Task<byte[]> ReadReceiptBytesAsync(FileResult file)
+    {
+        if (DeviceInfo.Platform == DevicePlatform.MacCatalyst
+            && !string.IsNullOrWhiteSpace(file.FullPath)
+            && File.Exists(file.FullPath))
+        {
+            return await File.ReadAllBytesAsync(file.FullPath);
+        }
+
+        await using var stream = await file.OpenReadAsync();
+        using var memory = new MemoryStream();
+        await stream.CopyToAsync(memory);
+        return memory.ToArray();
     }
 }
