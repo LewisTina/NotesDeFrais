@@ -10,7 +10,7 @@
                 <VerticalStackLayout Spacing="3">
                     <Label Text="Espace NotesDeFrais"
                            Style="{StaticResource PageTitle}" />
-                    <Label Text="Connexion a ton espace notes de frais"
+                    <Label Text="Connexion AWS Cognito et parametres d'environnement"
                            Style="{StaticResource PageSubtitle}" />
                 </VerticalStackLayout>
                 <ActivityIndicator Grid.Column="1"
@@ -47,32 +47,32 @@
 
             <Border Style="{StaticResource Panel}">
                 <VerticalStackLayout Spacing="14">
-                    <Label Text="Acces au compte"
+                    <Label Text="Configuration"
                            Style="{StaticResource SectionTitle}" />
-                    <Label Text="{Binding ConfigurationMessage}"
-                           TextColor="{StaticResource Muted}" />
-                    <Border BackgroundColor="{StaticResource DangerSoft}"
-                            IsVisible="{Binding IsConfigurationMissing}"
-                            Padding="12"
-                            StrokeThickness="0">
-                        <Border.StrokeShape>
-                            <RoundRectangle CornerRadius="8" />
-                        </Border.StrokeShape>
-                        <Label Text="La connexion est desactivee tant que la configuration de connexion n'est pas disponible."
-                               TextColor="{StaticResource Danger}" />
-                    </Border>
+
+                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="14" RowSpacing="12">
+                        <VerticalStackLayout Spacing="5">
+                            <Label Text="API Gateway" Style="{StaticResource FieldLabel}" />
+                            <Entry x:Name="ApiUrlEntry" Keyboard="Url" Placeholder="https://...execute-api..." />
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="1" Spacing="5">
+                            <Label Text="Domaine Cognito" Style="{StaticResource FieldLabel}" />
+                            <Entry x:Name="CognitoDomainEntry" Keyboard="Url" Placeholder="https://...auth...amazoncognito.com" />
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Row="1" Spacing="5">
+                            <Label Text="Client id Cognito" Style="{StaticResource FieldLabel}" />
+                            <Entry x:Name="ClientIdEntry" Placeholder="client id public" />
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Row="1" Grid.Column="1" Spacing="5">
+                            <Label Text="URI de retour" Style="{StaticResource FieldLabel}" />
+                            <Entry x:Name="RedirectUriEntry" Placeholder="notesdefrais://auth" />
+                        </VerticalStackLayout>
+                    </Grid>
 
                     <FlexLayout Direction="Row" Wrap="Wrap" AlignItems="Center">
-                        <Button Text="Connexion Cognito"
-                                Margin="0,0,10,10"
-                                IsEnabled="{Binding IsConfigurationReady}"
-                                IsVisible="{Binding IsConnected, Converter={StaticResource InvertedBoolConverter}}"
-                                Clicked="OnSignInClicked" />
-                        <Button Text="Deconnexion"
-                                Style="{StaticResource DangerButton}"
-                                Margin="0,0,10,10"
-                                IsVisible="{Binding IsConnected}"
-                                Clicked="OnSignOutClicked" />
+                        <Button Text="Enregistrer" Style="{StaticResource SecondaryButton}" Margin="0,0,10,10" Clicked="OnSaveClicked" />
+                        <Button Text="Connexion Cognito" Margin="0,0,10,10" IsVisible="{Binding IsConnected, Converter={StaticResource InvertedBoolConverter}}" Clicked="OnSignInClicked" />
+                        <Button Text="Deconnexion" Style="{StaticResource DangerButton}" Margin="0,0,10,10" IsVisible="{Binding IsConnected}" Clicked="OnSignOutClicked" />
                     </FlexLayout>
                 </VerticalStackLayout>
             </Border>

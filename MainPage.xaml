@@ -41,12 +41,12 @@
                           ColumnSpacing="12">
                         <VerticalStackLayout Spacing="2">
                             <Label x:Name="SessionTitleLabel"
-                                   Text="Connexion"
+                                   Text="Configuration et connexion"
                                    FontSize="18"
                                    FontAttributes="Bold"
                                    TextColor="#172033" />
                             <Label x:Name="SessionSubtitleLabel"
-                                   Text="Connecte-toi avec Cognito pour utiliser l'application."
+                                   Text="Renseigne la sortie SAM puis connecte-toi avec Cognito."
                                    FontSize="13"
                                    TextColor="#637083" />
                         </VerticalStackLayout>
@@ -58,21 +58,69 @@
                                 Clicked="OnLogoutClicked" />
                     </Grid>
 
-                    <FlexLayout Direction="Row"
-                                Wrap="Wrap"
-                                AlignItems="Center">
-                        <Button x:Name="LoginButton"
-                                Text="Connexion Cognito"
-                                Margin="0,0,10,10"
-                                BackgroundColor="#1D6F5F"
-                                TextColor="#FFFFFF"
-                                Clicked="OnLoginClicked" />
-                        <Button x:Name="RefreshButton"
-                                Text="Actualiser"
-                                Margin="0,0,10,10"
-                                IsVisible="False"
-                                Clicked="OnRefreshClicked" />
-                    </FlexLayout>
+                    <Grid ColumnDefinitions="*,*"
+                          RowDefinitions="Auto,Auto,Auto"
+                          ColumnSpacing="12"
+                          RowSpacing="10">
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="API Gateway"
+                                   FontSize="12"
+                                   TextColor="#637083" />
+                            <Entry x:Name="ApiUrlEntry"
+                                   Placeholder="https://abc.execute-api.eu-west-1.amazonaws.com"
+                                   Keyboard="Url" />
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Grid.Column="1"
+                                             Spacing="4">
+                            <Label Text="Domaine Cognito"
+                                   FontSize="12"
+                                   TextColor="#637083" />
+                            <Entry x:Name="CognitoDomainEntry"
+                                   Placeholder="https://prefix.auth.eu-west-1.amazoncognito.com"
+                                   Keyboard="Url" />
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Grid.Row="1"
+                                             Spacing="4">
+                            <Label Text="Client id Cognito"
+                                   FontSize="12"
+                                   TextColor="#637083" />
+                            <Entry x:Name="ClientIdEntry"
+                                   Placeholder="client id public" />
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Grid.Row="1"
+                                             Grid.Column="1"
+                                             Spacing="4">
+                            <Label Text="URI de retour"
+                                   FontSize="12"
+                                   TextColor="#637083" />
+                            <Entry x:Name="RedirectUriEntry"
+                                   Placeholder="notesdefrais://auth" />
+                        </VerticalStackLayout>
+
+                        <FlexLayout Grid.Row="2"
+                                    Grid.ColumnSpan="2"
+                                    Direction="Row"
+                                    Wrap="Wrap"
+                                    AlignItems="Center">
+                            <Button Text="Enregistrer"
+                                    Margin="0,0,10,10"
+                                    Clicked="OnSaveConfigurationClicked" />
+                            <Button x:Name="LoginButton"
+                                    Text="Connexion Cognito"
+                                    Margin="0,0,10,10"
+                                    BackgroundColor="#1D6F5F"
+                                    TextColor="#FFFFFF"
+                                    Clicked="OnLoginClicked" />
+                            <Button x:Name="RefreshButton"
+                                    Text="Actualiser"
+                                    Margin="0,0,10,10"
+                                    IsVisible="False"
+                                    Clicked="OnRefreshClicked" />
+                        </FlexLayout>
+                    </Grid>
                 </VerticalStackLayout>
             </Border>
 

@@ -28,14 +28,6 @@ public sealed class AppSession : INotifyPropertyChanged
 
     public ExpenseAppConfiguration Configuration => configuration;
 
-    public bool IsConfigurationReady => configuration.IsComplete;
-
-    public bool IsConfigurationMissing => !IsConfigurationReady;
-
-    public string ConfigurationMessage => IsConfigurationReady
-        ? "Connexion securisee via AWS Cognito."
-        : "L'application n'est pas encore disponible. Contacte l'administrateur de l'application.";
-
     public AppUserProfile? CurrentUser
     {
         get => currentUser;
@@ -80,9 +72,9 @@ public sealed class AppSession : INotifyPropertyChanged
 
     public string Email => CurrentUser?.Email ?? "Connecte-toi pour utiliser l'application";
 
-    public string RoleLabel => CurrentUser?.RoleLabel ?? (IsConfigurationReady ? "Pret" : "Configuration manquante");
+    public string RoleLabel => CurrentUser?.RoleLabel ?? "Session inactive";
 
-    public string SessionTitle => IsConnected ? $"{DisplayName} - {RoleLabel}" : "Connexion";
+    public string SessionTitle => IsConnected ? $"{DisplayName} - {RoleLabel}" : "Configuration et connexion";
 
     public async Task InitializeAsync()
     {
@@ -102,11 +94,19 @@ public sealed class AppSession : INotifyPropertyChanged
         });
     }
 
-    public async Task SignInAsync()
+    public void SaveConfiguration(ExpenseAppConfiguration nextConfiguration)
+    {
+        configuration = nextConfiguration.Normalized();
+        configuration.Save();
+        RebuildClients();
+        OnPropertyChanged(nameof(Configuration));
+    }
+
+    public async Task SignInAsync(ExpenseAppConfiguration nextConfiguration)
     {
         await RunAsync(async () =>
         {
-            EnsureConfigurationReady();
+            SaveConfiguration(nextConfiguration);
             CurrentUser = await authService.SignInAsync();
             await RefreshAllAsync();
         });
@@ -197,14 +197,10 @@ public sealed class AppSession : INotifyPropertyChanged
         }
     }
 
-    private void EnsureConfigurationReady()
+    private void RebuildClients()
     {
-        if (configuration.IsComplete)
-        {
-            return;
-        }
-
-        throw new InvalidOperationException(ConfigurationMessage);
+        authService = new CognitoAuthService(configuration);
+        expenseApiClient = new ExpenseApiClient(configuration, authService.GetValidIdTokenAsync);
     }
 
     private static void ReplaceItems(ObservableCollection<ExpenseRequest> target, IEnumerable<ExpenseRequest> source)

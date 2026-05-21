@@ -11,7 +11,7 @@ Le client MAUI est fonctionnel avec :
 
 - Authentification Cognito Hosted UI en OAuth code flow avec PKCE.
 - Stockage local des tokens, avec fallback pour les builds MacCatalyst locaux.
-- Configuration chargee depuis l'environnement, sans ecran technique pour l'utilisateur final.
+- Configuration saisissable dans l'app, sans secrets en dur.
 - Upload de justificatif vers S3 via URL presignee.
 - Creation et listing des demandes via API Gateway + Lambda.
 - Espace admin visible uniquement quand le token Cognito contient le groupe `ADMIN`.
@@ -83,7 +83,16 @@ Les valeurs importantes sont :
 
 ## Configurer l'application
 
-L'application lit la configuration depuis les variables d'environnement. Elles doivent etre definies avant le lancement de l'app :
+Le plus simple est d'ouvrir l'app et de remplir les champs de configuration :
+
+- API Gateway : valeur `ExpenseApiUrl`.
+- Domaine Cognito : valeur `CognitoHostedUiDomain`.
+- Client id Cognito : valeur `CognitoClientId`.
+- URI de retour : `notesdefrais://auth`.
+
+Cliquer ensuite sur `Enregistrer`, puis `Connexion Cognito`.
+
+L'application lit aussi ces variables d'environnement si elles existent :
 
 - `EXPENSE_API_URL`
 - `COGNITO_DOMAIN`
@@ -91,34 +100,7 @@ L'application lit la configuration depuis les variables d'environnement. Elles d
 - `COGNITO_REDIRECT_URI`
 - `COGNITO_LOGOUT_URI`
 
-Le depot fournit un modele versionnable : `.env.example`. Le fichier local reel doit s'appeler `.env` et ne doit pas etre committe.
-
-```bash
-cp .env.example .env
-```
-
-Remplir ensuite `.env` avec les sorties CloudFormation :
-
-| Variable | Valeur a utiliser |
-| --- | --- |
-| `EXPENSE_API_URL` | `ExpenseApiUrl` |
-| `COGNITO_DOMAIN` | `CognitoHostedUiDomain` |
-| `COGNITO_CLIENT_ID` | `CognitoClientId` |
-| `COGNITO_REDIRECT_URI` | `notesdefrais://auth` |
-| `COGNITO_LOGOUT_URI` | `notesdefrais://signout` |
-
-Charger le fichier avant de lancer l'app depuis un terminal :
-
-```bash
-set -a
-source .env
-set +a
-dotnet build NotesDeFrais.csproj -f net10.0-maccatalyst
-```
-
-Si l'app est lancee depuis Visual Studio, Rider ou VS Code, renseigner les memes variables dans la configuration de lancement de l'IDE. Ne pas commit de fichier de lancement contenant les vraies valeurs ; `.env`, `.env.*`, `appSettings.local.json` et `Properties/launchSettings.local.json` sont ignores par Git.
-
-La page `Session` sert uniquement a connecter ou deconnecter l'utilisateur. Si une variable obligatoire manque, l'app affiche un message d'indisponibilite au lieu d'un formulaire de configuration.
+Le fichier `appSettings.json` present dans le depot sert de reference locale, mais le code actuel charge la configuration depuis les variables d'environnement ou depuis les preferences enregistrees par l'ecran de configuration.
 
 ## Creer les comptes
 
