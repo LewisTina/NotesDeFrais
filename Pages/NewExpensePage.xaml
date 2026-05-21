@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="NotesDeFrais.Pages.NewExpensePage"
+             BackgroundColor="{StaticResource Surface}"
+             Title="Nouvelle">
+    <ScrollView>
+        <VerticalStackLayout Padding="28,24" Spacing="18">
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                <VerticalStackLayout Spacing="3">
+                    <Label Text="Nouvelle demande" Style="{StaticResource PageTitle}" />
+                    <Label Text="Saisis la depense puis joins le justificatif"
+                           Style="{StaticResource PageSubtitle}" />
+                </VerticalStackLayout>
+                <ActivityIndicator Grid.Column="1"
+                                   IsRunning="{Binding IsBusy}"
+                                   IsVisible="{Binding IsBusy}"
+                                   VerticalOptions="Center" />
+            </Grid>
+
+            <Border Style="{StaticResource Panel}">
+                <VerticalStackLayout Spacing="16">
+                    <Grid ColumnDefinitions="180,*" ColumnSpacing="14">
+                        <VerticalStackLayout Spacing="5">
+                            <Label Text="Montant" Style="{StaticResource FieldLabel}" />
+                            <Entry x:Name="AmountEntry" Keyboard="Numeric" Placeholder="42,50" />
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="1" Spacing="5">
+                            <Label Text="Categorie" Style="{StaticResource FieldLabel}" />
+                            <Picker x:Name="CategoryPicker" Title="Choisir une categorie">
+                                <Picker.ItemsSource>
+                                    <x:Array Type="{x:Type x:String}">
+                                        <x:String>Transport</x:String>
+                                        <x:String>Repas</x:String>
+                                        <x:String>Hebergement</x:String>
+                                        <x:String>Materiel</x:String>
+                                        <x:String>Autre</x:String>
+                                    </x:Array>
+                                </Picker.ItemsSource>
+                            </Picker>
+                        </VerticalStackLayout>
+                    </Grid>
+
+                    <VerticalStackLayout Spacing="5">
+                        <Label Text="Description" Style="{StaticResource FieldLabel}" />
+                        <Editor x:Name="DescriptionEditor"
+                                MinimumHeightRequest="120"
+                                AutoSize="TextChanges"
+                                Placeholder="Contexte de la depense" />
+                    </VerticalStackLayout>
+
+                    <Border BackgroundColor="{StaticResource SurfaceAlt}" StrokeThickness="0" Padding="14">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="8" />
+                        </Border.StrokeShape>
+                        <Grid ColumnDefinitions="220,*" ColumnSpacing="14">
+                            <VerticalStackLayout Spacing="10">
+                                <Button Text="Choisir un justificatif" Style="{StaticResource SecondaryButton}" Clicked="OnPickReceiptClicked" />
+                                <Entry x:Name="ReceiptPathEntry" Placeholder="/Users/.../ticket.png" />
+                                <Button Text="Charger le chemin" Style="{StaticResource SecondaryButton}" Clicked="OnLoadReceiptPathClicked" />
+                            </VerticalStackLayout>
+
+                            <Grid Grid.Column="1">
+                                <VerticalStackLayout x:Name="ReceiptEmptyState" Spacing="6" VerticalOptions="Center">
+                                    <Label Text="Aucun justificatif selectionne"
+                                           FontAttributes="Bold"
+                                           TextColor="{StaticResource Ink}" />
+                                    <Label Text="Formats acceptes : JPG, PNG, WEBP, GIF"
+                                           TextColor="{StaticResource Muted}" />
+                                </VerticalStackLayout>
+                                <Grid x:Name="ReceiptPreviewPanel" IsVisible="False" ColumnDefinitions="160,*" ColumnSpacing="12">
+                                    <Image x:Name="ReceiptPreviewImage"
+                                           HeightRequest="120"
+                                           Aspect="AspectFit"
+                                           BackgroundColor="#FFFFFF" />
+                                    <VerticalStackLayout Grid.Column="1" Spacing="4" VerticalOptions="Center">
+                                        <Label x:Name="ReceiptNameLabel" FontAttributes="Bold" TextColor="{StaticResource Ink}" />
+                                        <Label x:Name="ReceiptSizeLabel" TextColor="{StaticResource Muted}" />
+                                    </VerticalStackLayout>
+                                </Grid>
+                            </Grid>
+                        </Grid>
+                    </Border>
+
+                    <Button Text="Envoyer la demande" Style="{StaticResource SuccessButton}" Clicked="OnCreateExpenseClicked" />
+                </VerticalStackLayout>
+            </Border>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

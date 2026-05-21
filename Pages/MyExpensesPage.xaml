@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="NotesDeFrais.Pages.MyExpensesPage"
+             x:Name="Root"
+             BackgroundColor="{StaticResource Surface}"
+             Title="Mes demandes">
+    <ScrollView>
+        <VerticalStackLayout Padding="28,24" Spacing="18">
+            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
+                <VerticalStackLayout Spacing="3">
+                    <Label Text="Mes demandes" Style="{StaticResource PageTitle}" />
+                    <Label Text="Suivi des remboursements envoyes"
+                           Style="{StaticResource PageSubtitle}" />
+                </VerticalStackLayout>
+                <ActivityIndicator Grid.Column="1"
+                                   IsRunning="{Binding IsBusy}"
+                                   IsVisible="{Binding IsBusy}"
+                                   VerticalOptions="Center" />
+                <Button Grid.Column="2" Text="Recharger" Style="{StaticResource SecondaryButton}" Clicked="OnRefreshClicked" />
+            </Grid>
+
+            <Border x:Name="EmptyState" Style="{StaticResource Panel}">
+                <VerticalStackLayout Spacing="5">
+                    <Label Text="Aucune demande pour le moment"
+                           FontAttributes="Bold"
+                           FontSize="18"
+                           TextColor="{StaticResource Ink}" />
+                    <Label Text="Les demandes envoyees depuis l'onglet Nouvelle apparaitront ici."
+                           TextColor="{StaticResource Muted}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <VerticalStackLayout Spacing="12"
+                                 BindableLayout.ItemsSource="{Binding MyExpenses}">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate>
+                        <Border Style="{StaticResource Panel}">
+                            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="16" RowSpacing="7">
+                                <VerticalStackLayout Spacing="2">
+                                    <Label Text="{Binding Category}" FontAttributes="Bold" FontSize="17" TextColor="{StaticResource Ink}" />
+                                    <Label Text="{Binding Description}" TextColor="{StaticResource Muted}" />
+                                </VerticalStackLayout>
+                                <VerticalStackLayout Grid.Column="1" HorizontalOptions="End" Spacing="3">
+                                    <Label Text="{Binding DisplayAmount}" FontAttributes="Bold" FontSize="18" TextColor="{StaticResource Ink}" HorizontalTextAlignment="End" />
+                                    <Label Text="{Binding DisplayStatus}" TextColor="{StaticResource Accent}" FontAttributes="Bold" HorizontalTextAlignment="End" />
+                                </VerticalStackLayout>
+
+                                <Label Grid.Row="1" Text="{Binding DisplayCreatedAt}" TextColor="{StaticResource Muted}" FontSize="12" />
+                                <Label Grid.Row="2"
+                                       Grid.ColumnSpan="2"
+                                       Text="{Binding AdminComment, StringFormat='Commentaire admin : {0}'}"
+                                       TextColor="{StaticResource Danger}"
+                                       IsVisible="{Binding HasAdminComment}" />
+
+                                <Button Grid.Row="1"
+                                        Grid.Column="1"
+                                        Text="Justificatif"
+                                        Style="{StaticResource SecondaryButton}"
+                                        IsVisible="{Binding HasReceipt}"
+                                        CommandParameter="{Binding ReceiptUrl}"
+                                        Clicked="OnOpenReceiptClicked" />
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </VerticalStackLayout>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

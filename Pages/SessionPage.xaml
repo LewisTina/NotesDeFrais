@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="NotesDeFrais.Pages.SessionPage"
+             BackgroundColor="{StaticResource Surface}"
+             Title="Session">
+    <ScrollView>
+        <VerticalStackLayout Padding="28,24" Spacing="18">
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                <VerticalStackLayout Spacing="3">
+                    <Label Text="Espace NotesDeFrais"
+                           Style="{StaticResource PageTitle}" />
+                    <Label Text="Connexion AWS Cognito et parametres d'environnement"
+                           Style="{StaticResource PageSubtitle}" />
+                </VerticalStackLayout>
+                <ActivityIndicator Grid.Column="1"
+                                   IsRunning="{Binding IsBusy}"
+                                   IsVisible="{Binding IsBusy}"
+                                   VerticalOptions="Center" />
+            </Grid>
+
+            <Border Style="{StaticResource Panel}">
+                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="14">
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="{Binding SessionTitle}"
+                               FontSize="20"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource Ink}" />
+                        <Label Text="{Binding Email}"
+                               TextColor="{StaticResource Muted}" />
+                    </VerticalStackLayout>
+                    <Border Grid.Column="1"
+                            Padding="12,7"
+                            BackgroundColor="{StaticResource AccentSoft}"
+                            StrokeThickness="0"
+                            VerticalOptions="Start">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="8" />
+                        </Border.StrokeShape>
+                        <Label Text="{Binding RoleLabel}"
+                               TextColor="{StaticResource Accent}"
+                               FontAttributes="Bold"
+                               FontSize="12" />
+                    </Border>
+                </Grid>
+            </Border>
+
+            <Border Style="{StaticResource Panel}">
+                <VerticalStackLayout Spacing="14">
+                    <Label Text="Configuration"
+                           Style="{StaticResource SectionTitle}" />
+
+                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="14" RowSpacing="12">
+                        <VerticalStackLayout Spacing="5">
+                            <Label Text="API Gateway" Style="{StaticResource FieldLabel}" />
+                            <Entry x:Name="ApiUrlEntry" Keyboard="Url" Placeholder="https://...execute-api..." />
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="1" Spacing="5">
+                            <Label Text="Domaine Cognito" Style="{StaticResource FieldLabel}" />
+                            <Entry x:Name="CognitoDomainEntry" Keyboard="Url" Placeholder="https://...auth...amazoncognito.com" />
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Row="1" Spacing="5">
+                            <Label Text="Client id Cognito" Style="{StaticResource FieldLabel}" />
+                            <Entry x:Name="ClientIdEntry" Placeholder="client id public" />
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Row="1" Grid.Column="1" Spacing="5">
+                            <Label Text="URI de retour" Style="{StaticResource FieldLabel}" />
+                            <Entry x:Name="RedirectUriEntry" Placeholder="notesdefrais://auth" />
+                        </VerticalStackLayout>
+                    </Grid>
+
+                    <FlexLayout Direction="Row" Wrap="Wrap" AlignItems="Center">
+                        <Button Text="Enregistrer" Style="{StaticResource SecondaryButton}" Margin="0,0,10,10" Clicked="OnSaveClicked" />
+                        <Button Text="Connexion Cognito" Margin="0,0,10,10" IsVisible="{Binding IsConnected, Converter={StaticResource InvertedBoolConverter}}" Clicked="OnSignInClicked" />
+                        <Button Text="Deconnexion" Style="{StaticResource DangerButton}" Margin="0,0,10,10" IsVisible="{Binding IsConnected}" Clicked="OnSignOutClicked" />
+                    </FlexLayout>
+                </VerticalStackLayout>
+            </Border>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
